@@ -227,6 +227,17 @@ UIColor* getColor(NSString *name, NSString *kind) {
 	return nil;
 }
 
+//Perform Black Magic
+BOOL isThemeLight(UIColor *color) {
+  CGFloat r, g, b;
+  [color getRed:&r green:&g blue:&b alpha:NULL];
+  CGFloat luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  if (luminance > 0.70) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
 @interface UIKeyboard : UIView
 @end
 
@@ -239,6 +250,15 @@ UIColor* getColor(NSString *name, NSString *kind) {
 @interface TUIEmojiSearchInputView : UIView
 @end
 
+@interface UIKBRenderConfig : NSObject
+-(void)setLightKeyboard:(BOOL)light;
++(void)refreshKeyboard;
++(id)darkConfig;
++(id)defaultConfig;
++(id)defaultEmojiConfig;
++(id)lowQualityDarkConfig;
+@end
+
 
 %group KEYBOARD
 
@@ -248,13 +268,16 @@ UIColor* getColor(NSString *name, NSString *kind) {
 	- (void)didMoveToWindow {
 		%orig;
 
-		id color = getColor(@"KEYBOARD", @"semantic") ?: getColor(@"BACKGROUND_PRIMARY", @"semantic");;
+		id color = getColor(@"KEYBOARD", @"semantic") ?: getColor(@"BACKGROUND_PRIMARY", @"semantic");
+
+        [%c(UIKBRenderConfig) refreshKeyboard];
+
 		if (originalKeyboardColor != nil && originalKeyboardColor != color) {
 			originalKeyboardColor = [self backgroundColor];
 		}
-		if (color != nil) {
-				[self setBackgroundColor:color];
-			} else {
+        if (color != nil) {
+			[self setBackgroundColor:color];
+		} else {
 			[self setBackgroundColor:originalKeyboardColor];
 		}
 	}
@@ -266,15 +289,16 @@ UIColor* getColor(NSString *name, NSString *kind) {
 	- (void)didMoveToWindow {
 		%orig;
 
-		id color = getColor(@"KEYBOARD", @"semantic") ?: getColor(@"BACKGROUND_PRIMARY", @"semantic");;
+		id color = getColor(@"KEYBOARD", @"semantic") ?: getColor(@"BACKGROUND_PRIMARY", @"semantic");
+
 		if (originalKeyboardColor != nil && originalKeyboardColor != color) {
 			originalKeyboardColor = [self backgroundColor];
 		}
-		if (color != nil) {
-				[self setBackgroundColor:color];
-			} else {
-			[self setBackgroundColor:originalKeyboardColor];
-		}
+        if (color != nil) {
+            [self setBackgroundColor:color];
+        } else {
+            [self setBackgroundColor:originalKeyboardColor];
+        }
 	}
 
 	%end
@@ -282,8 +306,17 @@ UIColor* getColor(NSString *name, NSString *kind) {
 	%hook UIKBRenderConfig
 
 	- (void)setLightKeyboard:(BOOL)arg1 {
-		%orig(NO);
-	}
+		%orig(isThemeLight(getColor(@"KEYBOARD", @"semantic") ?: getColor(@"BACKGROUND_PRIMARY", @"semantic")));
+    }
+
+    %new
+    +(void)refreshKeyboard {
+       	[[self darkConfig] setLightKeyboard:TRUE];
+    	[[self defaultConfig] setLightKeyboard:TRUE];
+    	[[self defaultEmojiConfig] setLightKeyboard:TRUE];
+    	[[self lowQualityDarkConfig] setLightKeyboard:TRUE];
+
+    }
 
 	%end
 
@@ -292,23 +325,24 @@ UIColor* getColor(NSString *name, NSString *kind) {
 		%orig;
 
 
-		id color = getColor(@"KEYBOARD", @"semantic") ?: getColor(@"BACKGROUND_PRIMARY", @"semantic");;
+		id color = getColor(@"KEYBOARD", @"semantic") ?: getColor(@"BACKGROUND_PRIMARY", @"semantic");
+
 		if (originalKeyboardColor != nil && originalKeyboardColor != color) {
 			originalKeyboardColor = [self backgroundColor];
 		}
-		if (color != nil) {
-			[self setBackgroundColor:color];
+        if (color != nil) {
+            [self setBackgroundColor:color];
 
-			for (UIView *subview in self.subviews) {
-				[subview setBackgroundColor:color];
-			}
-		} else {
-			[self setBackgroundColor:originalKeyboardColor];
+            for (UIView *subview in self.subviews) {
+                [subview setBackgroundColor:color];
+            }
+        } else {
+            [self setBackgroundColor:originalKeyboardColor];
 
-			for (UIView *subview in self.subviews) {
-				[subview setBackgroundColor:originalKeyboardColor];
-			}
-		}
+            for (UIView *subview in self.subviews) {
+                [subview setBackgroundColor:originalKeyboardColor];
+            }
+        }
 	}
 	%end
 
@@ -317,15 +351,17 @@ UIColor* getColor(NSString *name, NSString *kind) {
 	- (void)didMoveToWindow {
 		%orig;
 
-		id color = getColor(@"KEYBOARD", @"semantic") ?: getColor(@"BACKGROUND_PRIMARY", @"semantic");;
+		id color = getColor(@"KEYBOARD", @"semantic") ?: getColor(@"BACKGROUND_PRIMARY", @"semantic");
+
 		if (originalKeyboardColor != nil && originalKeyboardColor != color) {
 			originalKeyboardColor = [self backgroundColor];
 		}
-		if (color != nil) {
-				[self setBackgroundColor:color];
-			} else {
-			[self setBackgroundColor:originalKeyboardColor];
-		}
+
+        if (color != nil) {
+            [self setBackgroundColor:color];
+        } else {
+            [self setBackgroundColor:originalKeyboardColor];
+        }
 	}
 	%end
 
